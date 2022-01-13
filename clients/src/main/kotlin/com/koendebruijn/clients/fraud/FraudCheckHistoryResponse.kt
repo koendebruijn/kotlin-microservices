@@ -1,3 +1,3 @@
-package com.koendebruijn.fraud.dto
+package com.koendebruijn.clients.fraud
 
 data class FraudCheckHistoryResponse(val isFraudster: Boolean)

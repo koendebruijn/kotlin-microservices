@@ -1,15 +1,16 @@
 package com.koendebruijn.customer
 
+import com.koendebruijn.clients.fraud.FraudClient
 import com.koendebruijn.customer.dto.CustomerRegistrationRequest
-import com.koendebruijn.customer.dto.FraudCheckHistoryResponse
 import com.koendebruijn.customer.exception.EmailTakenException
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.springframework.web.client.RestTemplate
 
 @Service
-class CustomerService(private val customerRepository: CustomerRepository, private val restTemplate: RestTemplate) {
+class CustomerService(
+    private val customerRepository: CustomerRepository,
+    private val fraudClient: FraudClient
+) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -24,14 +25,9 @@ class CustomerService(private val customerRepository: CustomerRepository, privat
 
         customerRepository.saveAndFlush(customer)
 
+        val fraudCheckHistoryResponse = fraudClient.isFraudster(customer.id)
 
-        val fraudCheckHistoryResponse = restTemplate.getForObject(
-            "http://FRAUD/api/v1/fraud-check/{customerId}",
-            FraudCheckHistoryResponse::class.java,
-            customer.id
-        )
-
-        if (fraudCheckHistoryResponse?.isFraudster == true) {
+        if (fraudCheckHistoryResponse.isFraudster) {
             logger.info("customer {} is a fraudster", customer.id)
             throw IllegalArgumentException()
         }
