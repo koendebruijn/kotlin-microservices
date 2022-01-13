@@ -1,6 +1,8 @@
 package com.koendebruijn.customer
 
 import com.koendebruijn.clients.fraud.FraudClient
+import com.koendebruijn.clients.notification.NotificationClient
+import com.koendebruijn.clients.notification.NotificationRequest
 import com.koendebruijn.customer.dto.CustomerRegistrationRequest
 import com.koendebruijn.customer.exception.EmailTakenException
 import org.slf4j.LoggerFactory
@@ -9,7 +11,8 @@ import org.springframework.stereotype.Service
 @Service
 class CustomerService(
     private val customerRepository: CustomerRepository,
-    private val fraudClient: FraudClient
+    private val fraudClient: FraudClient,
+    private val notificationClient: NotificationClient
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -31,6 +34,14 @@ class CustomerService(
             logger.info("customer {} is a fraudster", customer.id)
             throw IllegalArgumentException()
         }
+
+        notificationClient.sendNotification(
+            NotificationRequest(
+                toCustomerId = customer.id,
+                toCustomerEmail = customer.email,
+                message = "Hi ${customer.firstName}, welcome to..."
+            )
+        )
 
         return customer
     }
