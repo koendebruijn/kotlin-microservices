@@ -28,6 +28,8 @@ class CustomerService(
 
         customerRepository.saveAndFlush(customer)
 
+        logger.info("added customer $customer")
+
         val fraudCheckHistoryResponse = fraudClient.isFraudster(customer.id)
 
         if (fraudCheckHistoryResponse.isFraudster) {
