@@ -1,7 +1,7 @@
 package com.koendebruijn.customer
 
+import com.koendebruijn.amqp.RabbitMQMessageProducer
 import com.koendebruijn.clients.fraud.FraudClient
-import com.koendebruijn.clients.notification.NotificationClient
 import com.koendebruijn.clients.notification.NotificationRequest
 import com.koendebruijn.customer.dto.CustomerRegistrationRequest
 import com.koendebruijn.customer.exception.EmailTakenException
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service
 class CustomerService(
     private val customerRepository: CustomerRepository,
     private val fraudClient: FraudClient,
-    private val notificationClient: NotificationClient
+    private val rabbitMQMessageProducer: RabbitMQMessageProducer
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -37,12 +37,16 @@ class CustomerService(
             throw IllegalArgumentException()
         }
 
-        notificationClient.sendNotification(
-            NotificationRequest(
-                toCustomerId = customer.id,
-                toCustomerEmail = customer.email,
-                message = "Hi ${customer.firstName}, welcome to..."
-            )
+        val notificationRequest = NotificationRequest(
+            toCustomerId = customer.id,
+            toCustomerEmail = customer.email,
+            message = "Hi ${customer.firstName}, welcome to..."
+        )
+
+        rabbitMQMessageProducer.publish(
+            notificationRequest,
+            "internal.exchange",
+            "internal.notification.routing-key"
         )
 
         return customer
