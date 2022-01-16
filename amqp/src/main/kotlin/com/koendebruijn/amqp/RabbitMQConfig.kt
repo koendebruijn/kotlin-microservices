@@ -33,7 +33,6 @@ class RabbitMQConfig(private val connectionFactory: ConnectionFactory) {
 
     @Bean
     fun jacksonConverter(): MessageConverter {
-
         return Jackson2JsonMessageConverter()
     }
 }
