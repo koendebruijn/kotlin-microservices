@@ -33,7 +33,9 @@ services:
     image: openzipkin/zipkin
     container_name: zipkin
     ports:
-      - 9411:9411
+      - "9411:9411"
+    networks:
+      - spring
 
   rabbitmq:
     image: rabbitmq:3.9.11-management-alpine
@@ -41,9 +43,99 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    networks:
+      - spring
+
+  eureka-server:
+    image: koendebruijn1/eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - zipkin
+    networks:
+      - spring
+
+  api-gateway:
+    image: koendebruijn1/api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_ZIPKIN_BASEURL=http://zipkin:9411
+    depends_on:
+      - zipkin
+      - eureka-server
+    networks:
+      - spring
+
+  customer:
+    image: koendebruijn1/customer:latest
+    container_name: customer
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_ZIPKIN_BASEURL=http://zipkin:9411
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/customer
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672
+    depends_on:
+      - zipkin
+      - eureka-server
+      - rabbitmq
+      - postgres
+    networks:
+      - spring
+      - postgres
+
+  fraud:
+    image: koendebruijn1/fraud:latest
+    container_name: fraud
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_ZIPKIN_BASEURL=http://zipkin:9411
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/fraud
+    depends_on:
+      - zipkin
+      - eureka-server
+      - rabbitmq
+      - postgres
+    networks:
+      - spring
+      - postgres
+
+  notification:
+    image: koendebruijn1/notification:latest
+    container_name: notification
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_ZIPKIN_BASEURL=http://zipkin:9411
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/notification
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672
+    depends_on:
+      - zipkin
+      - eureka-server
+      - rabbitmq
+      - postgres
+    networks:
+      - spring
+      - postgres
 
 networks:
   postgres:
+    driver: bridge
+  spring:
     driver: bridge
 
 volumes:

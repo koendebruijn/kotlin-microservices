@@ -8,6 +8,11 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <packaging>jar</packaging>
+
+    <properties>
+        <jib.skip>true</jib.skip>
+    </properties>
+
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>clients</artifactId>

@@ -7,6 +7,11 @@
         <groupId>com.MicroServices</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
+
+    <properties>
+        <jib.skip>true</jib.skip>
+    </properties>
+
     <modelVersion>4.0.0</modelVersion>
 
     <packaging>jar</packaging>
